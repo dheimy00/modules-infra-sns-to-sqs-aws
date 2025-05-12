@@ -4,7 +4,7 @@ resource "aws_sqs_queue" "dlq" {
   name                       = "${each.value.name}-dlq"
   delay_seconds              = 0
   max_message_size           = each.value.max_message_size
-  message_retention_seconds  = 1209600 # 14 days for DLQ
+  message_retention_seconds  = 1209600 # 14 dias
   receive_wait_time_seconds  = 0
   visibility_timeout_seconds = each.value.visibility_timeout_seconds
 
@@ -43,24 +43,44 @@ resource "aws_sns_topic_policy" "this" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "Allow-Self-Publish"
         Effect = "Allow"
         Principal = {
           Service = "sns.amazonaws.com"
         }
-        Action = [
-          "SNS:Publish"
-        ]
-        Resource = "*"
-      },
+        Action   = "SNS:Publish"
+        Resource = aws_sns_topic.this.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = aws_sns_topic.this.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_sqs_queue_policy" "sns_to_sqs" {
+  for_each = aws_sqs_queue.queues
+
+  queue_url = each.value.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
       {
-        Effect = "Allow",
-        Action = [
-          "sqs:SendMessage",
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes"
-        ],
-        Resource = "*"
+        Sid    = "AllowSNSPublish"
+        Effect = "Allow"
+        Principal = {
+          Service = "sns.amazonaws.com"
+        }
+        Action   = "sqs:SendMessage"
+        Resource = each.value.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = aws_sns_topic.this.arn
+          }
+        }
       }
     ]
   })
@@ -72,4 +92,9 @@ resource "aws_sns_topic_subscription" "subscriptions" {
   topic_arn = aws_sns_topic.this.arn
   protocol  = "sqs"
   endpoint  = each.value.arn
-} 
+
+  depends_on = [
+    aws_sqs_queue_policy.sns_to_sqs,
+    aws_sns_topic.this
+  ]
+}
