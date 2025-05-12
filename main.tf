@@ -41,42 +41,28 @@ resource "aws_sns_topic_policy" "this" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = concat(
-      [
-        for queue in aws_sqs_queue.queues : {
-          Effect = "Allow"
-          Principal = {
-            Service = "sns.amazonaws.com"
-          }
-          Action = [
-            "sqs:SendMessage"
-          ]
-          Resource = queue.arn
-          Condition = {
-            ArnLike = {
-              "aws:SourceArn" : aws_sns_topic.this.arn
-            }
-          }
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "sns.amazonaws.com"
         }
-      ],
-      [
-        for dlq in aws_sqs_queue.dlq : {
-          Effect = "Allow"
-          Principal = {
-            Service = "sns.amazonaws.com"
-          }
-          Action = [
-            "sqs:SendMessage"
-          ]
-          Resource = dlq.arn
-          Condition = {
-            ArnLike = {
-              "aws:SourceArn" : aws_sns_topic.this.arn
-            }
-          }
-        }
-      ]
-    )
+        Action = [
+          "SNS:Publish"
+        ]
+        Resource = "*"
+      },
+            {
+        Effect = "Allow",
+        Action = [
+          "sqs:SendMessage",
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ],
+        Resource = "*"
+      }
+    ]
   })
 }
 
