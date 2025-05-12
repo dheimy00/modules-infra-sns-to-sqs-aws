@@ -1,7 +1,7 @@
 resource "aws_sqs_queue" "dlq" {
   for_each = { for idx, queue in var.queues : queue.name => queue if queue.dlq != null }
 
-  name                        = "${each.value.name}-dlq"
+  name                       = "${each.value.name}-dlq"
   delay_seconds              = 0
   max_message_size           = each.value.max_message_size
   message_retention_seconds  = 1209600 # 14 dias
@@ -16,7 +16,7 @@ resource "aws_sqs_queue" "dlq" {
 resource "aws_sqs_queue" "queues" {
   for_each = { for idx, queue in var.queues : queue.name => queue }
 
-  name                        = each.value.name
+  name                       = each.value.name
   delay_seconds              = each.value.delay_seconds
   max_message_size           = each.value.max_message_size
   message_retention_seconds  = each.value.message_retention_seconds
@@ -43,13 +43,13 @@ resource "aws_sns_topic_policy" "this" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "Allow-Self-Publish"
-        Effect    = "Allow"
+        Sid    = "Allow-Self-Publish"
+        Effect = "Allow"
         Principal = {
           Service = "sns.amazonaws.com"
         }
-        Action    = "SNS:Publish"
-        Resource  = aws_sns_topic.this.arn
+        Action   = "SNS:Publish"
+        Resource = aws_sns_topic.this.arn
         Condition = {
           ArnEquals = {
             "aws:SourceArn" = aws_sns_topic.this.arn
@@ -69,13 +69,13 @@ resource "aws_sqs_queue_policy" "sns_to_sqs" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowSNSPublish"
-        Effect    = "Allow"
+        Sid    = "AllowSNSPublish"
+        Effect = "Allow"
         Principal = {
           Service = "sns.amazonaws.com"
         }
-        Action    = "sqs:SendMessage"
-        Resource  = each.value.arn
+        Action   = "sqs:SendMessage"
+        Resource = each.value.arn
         Condition = {
           ArnEquals = {
             "aws:SourceArn" = aws_sns_topic.this.arn
