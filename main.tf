@@ -52,7 +52,7 @@ resource "aws_sns_topic_policy" "this" {
         ]
         Resource = "*"
       },
-            {
+      {
         Effect = "Allow",
         Action = [
           "sqs:SendMessage",
