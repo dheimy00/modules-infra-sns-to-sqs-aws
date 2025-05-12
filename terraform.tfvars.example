@@ -1,0 +1,48 @@
+# SNS Topic name
+topic_name = "my-notification-topic"
+
+# SQS Queues configuration
+queues = {
+  # Standard queue with default settings
+  "standard-queue" = {
+    name = "my-standard-queue"
+    tags = {
+      Environment = "dev"
+      Project     = "my-project"
+    }
+  }
+
+  # Queue with custom settings and DLQ
+  "processing-queue" = {
+    name                       = "my-processing-queue"
+    delay_seconds             = 30
+    max_message_size          = 262144
+    message_retention_seconds = 345600
+    receive_wait_time_seconds = 20
+    visibility_timeout_seconds = 60
+    tags = {
+      Environment = "prod"
+      Project     = "my-project"
+    }
+    dlq = {
+      max_receive_count = 3
+    }
+  }
+
+  # Queue with long polling enabled
+  "long-polling-queue" = {
+    name                      = "my-long-polling-queue"
+    receive_wait_time_seconds = 20
+    tags = {
+      Environment = "dev"
+      Project     = "my-project"
+    }
+  }
+}
+
+# Common tags for all resources
+tags = {
+  Environment = "dev"
+  Project     = "my-project"
+  ManagedBy   = "terraform"
+} 
